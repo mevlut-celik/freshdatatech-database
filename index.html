@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>IoT Sıcaklık Paneli V0.1</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-light">
+<div class="container py-5">
+  <h2 class="text-center mb-4 text-primary">🌡️ IoT Sıcaklık Paneli-Monitoring-V0.1</h2>
+
+  <!-- Grafik -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-success text-white">Sıcaklık Grafiği</div>
+    <div class="card-body">
+      <canvas id="chart"></canvas>
+    </div>
+  </div>
+
+  <!-- Tablo -->
+  <div class="card shadow-sm">
+    <div class="card-header bg-dark text-white">Veri Tablosu</div>
+    <div class="card-body p-0">
+      <table class="table table-striped mb-0">
+        <thead class="table-secondary">
+          <tr>
+            <th>#</th>
+            <th>Cihaz</th>
+            <th>Sıcaklık (°C)</th>
+            <th>Zaman</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <tr><td colspan="4" class="text-center">Veriler yükleniyor...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+async function fetchData() {
+  const res = await fetch("api.php");
+  const data = await res.json();
+
+  const tbody = document.getElementById("table-body");
+  tbody.innerHTML = "";
+
+  const labels = [];
+  const temps = [];
+
+  data.reverse().forEach((row, index) => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${row.device_id}</td>
+        <td>${row.temperature}</td>
+        <td>${row.timestamp}</td>
+      </tr>`;
+    labels.push(row.timestamp);
+    temps.push(row.temperature);
+  });
+
+  drawChart(labels, temps);
+}
+
+function drawChart(labels, temps) {
+  const ctx = document.getElementById("chart").getContext("2d");
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Sıcaklık (°C)",
+        data: temps,
+        borderColor: "rgba(255,99,132,1)",
+        backgroundColor: "rgba(255,99,132,0.2)",
+        fill: true,
+        tension: 0.3
+      }]
+    },
+    options: {
+      scales: {
+        x: {
+          ticks: {
+            autoSkip: true,
+            maxTicksLimit: 10
+          }
+        },
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+fetchData();
+setInterval(fetchData, 10000); // Her 10 saniyede bir güncelle
+</script>
+</body>
+</html>
